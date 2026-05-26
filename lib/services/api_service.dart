@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart'
-    show TargetPlatform, debugPrint, defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,11 +17,7 @@ class ApiService {
   }
 
   static String get _defaultBaseUrl {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.166.125:8000/api';
-    }
-
-    return 'http://10.0.166.125:8000/api';
+    return 'https://kulosehat.site/api';
   }
 
   static String _normalizeBaseUrl(String url) {
