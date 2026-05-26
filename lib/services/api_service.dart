@@ -119,11 +119,11 @@ class ApiService {
     final data = jsonDecode(response.body);
 
     if (response.statusCode == 200 && data['success'] == true) {
-      final token = data['token'] ?? data['data']?['token'];
+      final token = _extractToken(data);
       final user = data['user'] ?? data['data']?['user'];
 
       if (token != null) {
-        await _saveToken(token);
+        await _saveToken(token.toString());
       }
       if (user != null) {
         await _saveUser(user);
@@ -242,11 +242,7 @@ class ApiService {
   }
 
   bool _isAuthSuccess(int statusCode, Map<String, dynamic> data) {
-    final token =
-        data['token'] ??
-        data['access_token'] ??
-        data['data']?['token'] ??
-        data['data']?['access_token'];
+    final token = _extractToken(data);
 
     return (statusCode == 200 || statusCode == 201) &&
         (data['success'] == true || token != null);
@@ -261,19 +257,22 @@ class ApiService {
   }
 
   Future<void> _saveAuthData(Map<String, dynamic> data) async {
-    final token =
-        data['token'] ??
-        data['access_token'] ??
-        data['data']?['token'] ??
-        data['data']?['access_token'];
+    final token = _extractToken(data);
     final user = data['user'] ?? data['data']?['user'];
 
     if (token != null) {
-      await _saveToken(token);
+      await _saveToken(token.toString());
     }
     if (user is Map<String, dynamic>) {
       await _saveUser(user);
     }
+  }
+
+  dynamic _extractToken(Map<String, dynamic> data) {
+    return data['token'] ??
+        data['access_token'] ??
+        data['data']?['token'] ??
+        data['data']?['access_token'];
   }
 
   Future<void> logout() async {

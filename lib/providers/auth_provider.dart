@@ -54,6 +54,13 @@ class AuthProvider with ChangeNotifier {
     return null;
   }
 
+  bool _hasAuthToken(Map<String, dynamic> data) {
+    return data['token'] != null ||
+        data['access_token'] != null ||
+        data['data']?['token'] != null ||
+        data['data']?['access_token'] != null;
+  }
+
   Future<void> _refreshUserFromProfile({Map<String, dynamic>? fallback}) async {
     try {
       final profile = await _api.getProfile();
@@ -78,10 +85,7 @@ class AuthProvider with ChangeNotifier {
     final override = await _api.getProfileOverride(email);
     if (override == null) return;
 
-    user = {
-      ...?user,
-      ...override,
-    };
+    user = {...?user, ...override};
     await _api.saveUser(user!);
 
     final savedAvatarPath = override['avatar_path']?.toString();
@@ -103,13 +107,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final data = await _api.register(name, email, password);
-      final hasToken =
-          data['token'] != null ||
-          data['access_token'] != null ||
-          data['data']?['token'] != null ||
-          data['data']?['access_token'] != null;
-
-      if (data['success'] == true || hasToken) {
+      if (data['success'] == true || _hasAuthToken(data)) {
         token = await _api.getToken();
         await _refreshUserFromProfile(
           fallback: _extractUserMap(data) ?? await _api.getSavedUser(),
@@ -137,7 +135,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final data = await _api.login(email, password);
-      if (data['success'] == true || data['token'] != null) {
+      if (data['success'] == true || _hasAuthToken(data)) {
         token = await _api.getToken();
         avatarPath = await _api.getSavedAvatarPath();
         await _refreshUserFromProfile(
@@ -178,7 +176,7 @@ class AuthProvider with ChangeNotifier {
         photoUrl: googleUser.photoUrl,
       );
 
-      if (data['success'] == true || data['token'] != null) {
+      if (data['success'] == true || _hasAuthToken(data)) {
         token = await _api.getToken();
         avatarPath = googleUser.photoUrl ?? await _api.getSavedAvatarPath();
         await _refreshUserFromProfile(
@@ -222,11 +220,7 @@ class AuthProvider with ChangeNotifier {
       if (result['success'] == true ||
           result['data'] != null ||
           result['user'] != null) {
-        final updatedUser = {
-          ...?user,
-          ...data,
-          ...?_extractUserMap(result),
-        };
+        final updatedUser = {...?user, ...data, ...?_extractUserMap(result)};
         await _refreshUserFromProfile(fallback: updatedUser);
         if (user != null) {
           await _api.saveProfileOverride({
@@ -253,10 +247,7 @@ class AuthProvider with ChangeNotifier {
     avatarPath = path;
     await _api.saveAvatarPath(path);
     if (user != null) {
-      await _api.saveProfileOverride({
-        ...user!,
-        'avatar_path': path,
-      });
+      await _api.saveProfileOverride({...user!, 'avatar_path': path});
     }
     notifyListeners();
   }
